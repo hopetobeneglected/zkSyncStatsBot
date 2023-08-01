@@ -8,38 +8,28 @@ import json
 import random
 import requests
 
-browser = None
+file = open('data.json')
+data = json.load(file)
 
-chrome_options = webdriver.ChromeOptions()
-chrome_options.add_argument('--disable-gpu')
-chrome_options.add_argument('--disable-infobars')
-chrome_options.add_experimental_option('prefs', {'intl.accept_languages': 'en,en_US'})
-chrome_options.add_argument("lang=en-US")
-chrome_options.add_argument("--mute-audio")
-chrome_options.add_argument('log-level=3')
-chrome_options.add_argument("--headless")
-chrome_options.add_experimental_option('excludeSwitches', ['enable-logging'])
+BROWSER = None
 
-headers = {
-                'authority': 'zksync2-mainnet.zkscan.io',
-                'accept': 'application/json, text/plain, */*',
-                'accept-language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7',
-                'origin': 'https://byfishh.github.io',
-                'referer': 'https://byfishh.github.io/',
-                'sec-ch-ua': '"Not/A)Brand";v="99", "Google Chrome";v="115", "Chromium";v="115"',
-                'sec-ch-ua-mobile': '?0',
-                'sec-ch-ua-platform': '"Windows"',
-                'sec-fetch-dest': 'empty',
-                'sec-fetch-mode': 'cors',
-                'sec-fetch-site': 'cross-site',
-                'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
-                              'Chrome/115.0.0.0 Safari/537.36',
-            }
+CHROME_OPTIONS = webdriver.ChromeOptions()
+CHROME_OPTIONS.add_argument('--disable-gpu')
+CHROME_OPTIONS.add_argument('--disable-infobars')
+CHROME_OPTIONS.add_experimental_option('prefs', {'intl.accept_languages': 'en,en_US'})
+CHROME_OPTIONS.add_argument("lang=en-US")
+CHROME_OPTIONS.add_argument("--mute-audio")
+CHROME_OPTIONS.add_argument('log-level=3')
+CHROME_OPTIONS.add_argument("--headless")
+CHROME_OPTIONS.add_experimental_option('excludeSwitches', ['enable-logging'])
+
+HEADERS = data.get('headers')
+PROXIES = data.get('proxies')
 
 
 def get_stats(wallet, max_retries=3):
 
-    global browser
+    global BROWSER
 
     logger.info(f"Statistic loading for {wallet}...")
     url_stats = f"https://byfishh.github.io/zk-flow/?address={wallet}"
@@ -47,15 +37,15 @@ def get_stats(wallet, max_retries=3):
     retries_left = max_retries
     for retry in range(max_retries):
         try:
-            browser = webdriver.Chrome(options=chrome_options)
-            browser.get(url_stats)
+            BROWSER = webdriver.Chrome(options=CHROME_OPTIONS)
+            BROWSER.get(url_stats)
             delay = random.randint(2, 5)
             sleep(delay)
 
-            amount_trx_element = browser.find_element(By.XPATH,
+            amount_trx_element = BROWSER.find_element(By.XPATH,
                                                       '//*[@id="root"]/main/div/div/div[1]/div[1]/div/div/div/h3')
-            volume_element = browser.find_element(By.XPATH, '//*[@id="root"]/main/div/div/div[1]/div[2]/div/div/div/h3')
-            fee_spent_element = browser.find_element(By.XPATH,
+            volume_element = BROWSER.find_element(By.XPATH, '//*[@id="root"]/main/div/div/div[1]/div[2]/div/div/div/h3')
+            fee_spent_element = BROWSER.find_element(By.XPATH,
                                                      '//*[@id="root"]/main/div/div/div[1]/div[3]/div/div/div/h3')
 
             amount_trx = amount_trx_element.text
@@ -63,7 +53,7 @@ def get_stats(wallet, max_retries=3):
             fee_spent = fee_spent_element.text
 
             logger.success(f"{wallet} has {amount_trx} transactions | {volume} volume | {fee_spent} fee spent")
-            browser.quit()
+            BROWSER.quit()
             return f"{amount_trx} transactions | {volume} volume | {fee_spent} fee spent"
 
         except (selenium.common.exceptions.WebDriverException, selenium.common.NoSuchElementException) as e:
@@ -72,7 +62,7 @@ def get_stats(wallet, max_retries=3):
 
     else:
         logger.error(f"Failed to retrieve stats for wallet {wallet}. Max retries exceeded.")
-        browser.quit()
+        BROWSER.quit()
         return "Failed to load the statistic. Please try again later"
 
 
@@ -96,13 +86,8 @@ def get_balance(wallet, max_retries=3):
                 'address': wallet,
             }
 
-            proxies = {
-                "http": "http://hdhxulgp-rotate:f7j8yo4tl2ev@p.webshare.io:80/",
-                "https": "http://hdhxulgp-rotate:f7j8yo4tl2ev@p.webshare.io:80/"
-            }
-
-            response = requests.get('https://zksync2-mainnet.zkscan.io/api', params=params, headers=headers,
-                                    proxies=proxies)
+            response = requests.get('https://zksync2-mainnet.zkscan.io/api', params=params, headers=HEADERS,
+                                    proxies=PROXIES)
 
             response.raise_for_status()
 
@@ -144,5 +129,9 @@ def check_all():
 
 
 if __name__ == '__main__':
-    get_info("0xF79998AD9B7b61294a1726f11f4897cFD9Ed20E7")
+    # get_info("0xF79998AD9B7b61294a1726f11f4897cFD9Ed20E7")
+    check_all()
+
+
+
 
