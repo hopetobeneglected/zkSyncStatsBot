@@ -1,17 +1,16 @@
+import datetime
+import multiprocessing
 from selenium import webdriver
-from time import sleep
 import selenium.common.exceptions
 from selenium.webdriver.common.by import By
 from loguru import logger
-from multiprocessing import Pool
 import json
 import random
 import requests
+import asyncio
 
 file = open('data.json')
 data = json.load(file)
-
-BROWSER = None
 
 CHROME_OPTIONS = webdriver.ChromeOptions()
 CHROME_OPTIONS.add_argument('--disable-gpu')
@@ -26,10 +25,11 @@ CHROME_OPTIONS.add_experimental_option('excludeSwitches', ['enable-logging'])
 HEADERS = data.get('headers')
 PROXIES = data.get('proxies')
 
+logger.add('logs/checker.log', level='DEBUG', retention="1 day")
 
-def get_stats(wallet, max_retries=3):
 
-    global BROWSER
+async def get_stats(wallet, max_retries=3):
+    BROWSER = None
 
     logger.info(f"Statistic loading for {wallet}...")
     url_stats = f"https://byfishh.github.io/zk-flow/?address={wallet}"
@@ -39,8 +39,8 @@ def get_stats(wallet, max_retries=3):
         try:
             BROWSER = webdriver.Chrome(options=CHROME_OPTIONS)
             BROWSER.get(url_stats)
-            delay = random.randint(2, 5)
-            sleep(delay)
+            delay = random.randint(2, 4)
+            await asyncio.sleep(delay)
 
             amount_trx_element = BROWSER.find_element(By.XPATH,
                                                       '//*[@id="root"]/main/div/div/div[1]/div[1]/div/div/div/h3')
@@ -54,7 +54,8 @@ def get_stats(wallet, max_retries=3):
 
             logger.success(f"{wallet} has {amount_trx} transactions | {volume} volume | {fee_spent} fee spent")
             BROWSER.quit()
-            return f"{amount_trx} transactions | {volume} volume | {fee_spent} fee spent"
+            return f"\n\nWallet {wallet}\n" \
+                   f"Account stats: {amount_trx} transactions | {volume} volume | {fee_spent} fee spent\n"
 
         except (selenium.common.exceptions.WebDriverException, selenium.common.NoSuchElementException) as e:
             logger.warning(f"Something went wrong, retrying wallet {wallet}... (Retries left: {retries_left}), {e}")
@@ -71,15 +72,12 @@ def get_wallets():
         return [row.strip() for row in f]
 
 
-def get_balance(wallet, max_retries=3):
+async def get_balance(wallet, max_retries=3):
     logger.info(f"Balances loading for {wallet}...")
 
     retries_left = max_retries
     for retry in range(max_retries):
         try:
-            delay = random.randint(2, 6)
-            sleep(delay)
-
             params = {
                 'module': 'account',
                 'action': 'tokenlist',
@@ -96,42 +94,44 @@ def get_balance(wallet, max_retries=3):
                                   in tokens_array]
 
             logger.success(f"Balance of {wallet} : " + " | ".join(token_info_strings))
-            return f" | ".join(token_info_strings)
+            return f"Account balances: " + "| ".join(token_info_strings)
 
         except (requests.exceptions.RequestException, TypeError) as e:
+            await asyncio.sleep(1)
             logger.warning(f"Something went wrong, retrying wallet {wallet}... (Retries left: {retries_left}), {e}")
             retries_left -= 1
 
     else:
         logger.error(f"Failed to retrieve balances for wallet {wallet}. Max retries exceeded.")
-        return "Failed to load the balances. Please try again later"
+        return "Failed to load balances. Please try again later"
 
 
 def calculate_amount(balance, decimals):
     return int(balance) / (10 ** int(decimals)) if decimals else int(balance)
 
 
-def get_info(wallet):
-    if len(wallet) != 42 or wallet[:2] != "0x":
-        print(f"{wallet} seems to be invalid! Please enter the correct wallet!")
-        return
-
-    statistic = get_stats(wallet)
-    balances = get_balance(wallet)
-    print(f"\nWallet {wallet}\n\n"
-          f"Account stats: {statistic}\n"
-          f"Account balances: {balances}\n")
+def run_pair(wallet):
+    loop = asyncio.get_event_loop()
+    result = loop.run_until_complete(asyncio.gather(get_stats(wallet), get_balance(wallet)))
+    return result
 
 
-def check_all():
-    pool = Pool(5)
-    pool.map(get_info, list(get_wallets()))
+def get_info(wallets):
+    output = ""
 
+    start_time = datetime.datetime.now()
+    with multiprocessing.Pool() as pool:
+        results = pool.map(run_pair, wallets)
 
-if __name__ == '__main__':
-    # get_info("0xF79998AD9B7b61294a1726f11f4897cFD9Ed20E7")
-    check_all()
+    for result in results:
+        for info in result:
+            output += info
 
+    end_time = datetime.datetime.now()
+    elapsed_time = end_time - start_time
+    print("Total time elapsed:", elapsed_time)
+    return output
 
-
-
+#
+# if __name__ == "__main__":
+#     get_info(get_wallets())

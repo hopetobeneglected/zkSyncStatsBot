@@ -1,0 +1,23 @@
+{
+  "headers": { "authority": "zksync2-mainnet.zkscan.io",
+                "accept": "application/json, text/plain, */*",
+                "accept-language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
+                "origin": "https://byfishh.github.io",
+                "referer": "https://byfishh.github.io/",
+                "sec-ch-ua": "\"Not/A)Brand\";v=\"99\", \"Google Chrome\";v=\"115\", \"Chromium\";v=\"115\"",
+                "sec-ch-ua-mobile": "?0",
+                "sec-ch-ua-platform": "\"Windows\"",
+                "sec-fetch-dest": "empty",
+                "sec-fetch-mode": "cors",
+                "sec-fetch-site": "cross-site",
+                "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
+  },
+
+  "proxies": {
+                "http": "http://hdhxulgp-rotate:f7j8yo4tl2ev@p.webshare.io:80/",
+                "https": "http://hdhxulgp-rotate:f7j8yo4tl2ev@p.webshare.io:80/"
+            },
+
+  "token": "6443121395:AAF62BuXVHdQo60i-QKf1azITH4eN68hxqI"
+
+}
