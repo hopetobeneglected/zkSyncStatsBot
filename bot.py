@@ -17,7 +17,7 @@ data = json.load(file)
 
 TOKEN = data.get('token')
 user_addresses = {}
-logger.add('logs/bot.log', level='DEBUG', retention="1 day")
+logger.add('/tmp/logs/bot.log', level='DEBUG', retention="1 day")
 
 WALLETS, NEXT_STEP = range(2)
 
