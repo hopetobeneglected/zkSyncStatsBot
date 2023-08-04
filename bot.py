@@ -17,7 +17,7 @@ data = json.load(file)
 
 TOKEN = data.get('token')
 user_addresses = {}
-logger.add('/tmp/logs/bot.log', level='DEBUG', retention="1 day")
+# logger.add('/tmp/logs/bot.log', level='DEBUG', retention="1 day")
 
 WALLETS, NEXT_STEP = range(2)
 
@@ -34,7 +34,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def info(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.message.from_user
-    logger.info(f"User {user.id} (username - {user.name}) clicked {update.message.text}")
+    # logger.info(f"User {user.id} (username - {user.name}) clicked {update.message.text}")
     await update.message.reply_text(
         f"Sources:\n\n"
         f"zkFlow - `https://byfishh.github.io/zk-flow/`\n"
@@ -46,7 +46,7 @@ async def info(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     user = update.message.from_user
-    logger.info(f"User {user.id} (username - {user.name}) clicked {update.message.text}")
+    # logger.info(f"User {user.id} (username - {user.name}) clicked {update.message.text}")
     await update.message.reply_text("_Please send me addresses of your accounts line by line_.\n\n"
                                     "*Do not send private keys!*",
                                     parse_mode=ParseMode.MARKDOWN)
@@ -59,7 +59,7 @@ async def proceed(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     user = update.message.from_user
 
     wallet_addresses = [line.strip() for line in message.strip().split("\n")]
-    logger.info(f"User {user.id} (username - {user.name}) wrote {wallet_addresses}")
+    # logger.info(f"User {user.id} (username - {user.name}) wrote {wallet_addresses}")
 
     sec = len(wallet_addresses) * 1
     message = update.message
