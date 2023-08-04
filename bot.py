@@ -61,11 +61,11 @@ async def proceed(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     wallet_addresses = [line.strip() for line in message.strip().split("\n")]
     logger.info(f"User {user.id} (username - {user.name}) wrote {wallet_addresses}")
 
-    sec = len(wallet_addresses) * 1
+    sec = len(wallet_addresses)
     message = update.message
 
     sent_message = await message.reply_text(
-        f"_Please wait... Estimated waiting time - {sec} seconds_",
+        f"_Please wait... Estimated waiting time - 20 seconds_",
         parse_mode=ParseMode.MARKDOWN)
 
     async def send(seconds):
