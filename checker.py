@@ -25,13 +25,13 @@ CHROME_OPTIONS.add_experimental_option('excludeSwitches', ['enable-logging'])
 HEADERS = data.get('headers')
 PROXIES = data.get('proxies')
 
-# logger.add('/tmp/logs/checker.log', level='DEBUG', retention="1 day")
+logger.add('/tmp/logs/checker.log', level='DEBUG', retention="1 day")
 
 
 async def get_stats(wallet, max_retries=3):
     BROWSER = None
 
-    # logger.info(f"Statistic loading for {wallet}...")
+    logger.info(f"Statistic loading for {wallet}...")
     url_stats = f"https://byfishh.github.io/zk-flow/?address={wallet}"
 
     retries_left = max_retries
@@ -52,17 +52,17 @@ async def get_stats(wallet, max_retries=3):
             volume = volume_element.text
             fee_spent = fee_spent_element.text
 
-            # logger.success(f"{wallet} has {amount_trx} transactions | {volume} volume | {fee_spent} fee spent")
+            logger.success(f"{wallet} has {amount_trx} transactions | {volume} volume | {fee_spent} fee spent")
             BROWSER.quit()
             return f"\n\nWallet {wallet}\n" \
                    f"Account stats: {amount_trx} transactions | {volume} volume | {fee_spent} fee spent\n"
 
         except (selenium.common.exceptions.WebDriverException, selenium.common.NoSuchElementException) as e:
-            # logger.warning(f"Something went wrong, retrying wallet {wallet}... (Retries left: {retries_left}), {e}")
+            logger.warning(f"Something went wrong, retrying wallet {wallet}... (Retries left: {retries_left}), {e}")
             retries_left -= 1
 
     else:
-        # logger.error(f"Failed to retrieve stats for wallet {wallet}. Max retries exceeded.")
+        logger.error(f"Failed to retrieve stats for wallet {wallet}. Max retries exceeded.")
         BROWSER.quit()
         return "Failed to load the statistic. Please try again later"
 
@@ -73,7 +73,7 @@ def get_wallets():
 
 
 async def get_balance(wallet, max_retries=3):
-    # logger.info(f"Balances loading for {wallet}...")
+    logger.info(f"Balances loading for {wallet}...")
 
     retries_left = max_retries
     for retry in range(max_retries):
@@ -93,16 +93,16 @@ async def get_balance(wallet, max_retries=3):
             token_info_strings = [f"{calculate_amount(token['balance'], token['decimals'])} {token['symbol']}" for token
                                   in tokens_array]
 
-            # logger.success(f"Balance of {wallet} : " + " | ".join(token_info_strings))
+            logger.success(f"Balance of {wallet} : " + " | ".join(token_info_strings))
             return f"Account balances: " + "| ".join(token_info_strings)
 
         except (requests.exceptions.RequestException, TypeError) as e:
             await asyncio.sleep(1)
-            # logger.warning(f"Something went wrong, retrying wallet {wallet}... (Retries left: {retries_left}), {e}")
+            logger.warning(f"Something went wrong, retrying wallet {wallet}... (Retries left: {retries_left}), {e}")
             retries_left -= 1
 
     else:
-        # logger.error(f"Failed to retrieve balances for wallet {wallet}. Max retries exceeded.")
+        logger.error(f"Failed to retrieve balances for wallet {wallet}. Max retries exceeded.")
         return "Failed to load balances. Please try again later"
 
 
@@ -131,7 +131,3 @@ def get_info(wallets):
     elapsed_time = end_time - start_time
     print("Total time elapsed:", elapsed_time)
     return output
-
-#
-# if __name__ == "__main__":
-#     get_info(get_wallets())
