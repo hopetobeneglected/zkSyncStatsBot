@@ -11,6 +11,10 @@ from telegram.ext import (
     MessageHandler,
     filters, ApplicationBuilder,
 )
+import aiohttp
+
+async def handle(request):
+    return aiohttp.web.Response(text="Hello from your bot's web server!")
 
 file = open('data.json')
 data = json.load(file)
@@ -109,7 +113,18 @@ def main():
     unknown_handler = MessageHandler(filters.COMMAND | filters.TEXT, unknown)
     application.add_handler(unknown_handler)
 
-    application.run_polling(allowed_updates=Update.ALL_TYPES)
+    # application.run_polling(allowed_updates=Update.ALL_TYPES)
+    
+    web_app = aiohttp.web.Application()
+    web_app.router.add_get('/', handle)
+
+    # Run both the polling and web server concurrently
+    loop = asyncio.get_event_loop()
+    tasks = [
+        application.run_polling(allowed_updates=Update.ALL_TYPES),
+        aiohttp.web.run_app(web_app, host='0.0.0.0', port=3000),
+    ]
+    loop.run_until_complete(asyncio.gather(*tasks))
 
 
 if __name__ == '__main__':
