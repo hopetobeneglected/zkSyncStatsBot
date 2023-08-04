@@ -25,7 +25,7 @@ CHROME_OPTIONS.add_experimental_option('excludeSwitches', ['enable-logging'])
 HEADERS = data.get('headers')
 PROXIES = data.get('proxies')
 
-logger.add('logs/checker.log', level='DEBUG', retention="1 day")
+logger.add('/tmp/logs/checker.log', level='DEBUG', retention="1 day")
 
 
 async def get_stats(wallet, max_retries=3):
