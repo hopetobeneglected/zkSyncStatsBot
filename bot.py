@@ -1,4 +1,3 @@
-import asyncio
 import json
 from telegram.constants import ParseMode
 import checker
@@ -47,14 +46,14 @@ async def info(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     user = update.message.from_user
     logger.info(f"User {user.id} (username - {user.name}) clicked {update.message.text}")
-    await update.message.reply_text("_Please send me addresses of your accounts line by line_.\n\n"
+    await update.message.reply_text("Please send the addresses of your accounts line by line.\n"
+                                    "_This bot can process max. 15 wallets at once due to telegram restrictions!_\n\n"
                                     "*Do not send private keys!*",
                                     parse_mode=ParseMode.MARKDOWN)
     return WALLETS
 
 
 async def proceed(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Echo the user message."""
     message = update.message.text
     user = update.message.from_user
 
@@ -62,22 +61,11 @@ async def proceed(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     logger.info(f"User {user.id} (username - {user.name}) wrote {wallet_addresses}")
 
     sec = len(wallet_addresses)
-    message = update.message
-
-    sent_message = await message.reply_text(
-        f"_Please wait... Estimated waiting time - 20 seconds_",
-        parse_mode=ParseMode.MARKDOWN)
-
-    async def send(seconds):
-        for i in range(0, seconds):
-            seconds -= 1
-            await asyncio.sleep(1)
-            await sent_message.edit_text(
-                text=f"_Please wait... Estimated waiting time - {seconds} seconds_",
-                parse_mode=ParseMode.MARKDOWN)
 
     result = checker.get_info(wallet_addresses)
-    await update.message.reply_text(result)
+    await update.message.reply_text(result[0])
+    await update.message.reply_text(f"*{sec} wallet(s) were successfully proceeded!*\n\n"
+                                    f"_Time required: {result[1]} seconds_", parse_mode=ParseMode.MARKDOWN)
     return ConversationHandler.END
 
 
@@ -87,6 +75,8 @@ async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     application = ApplicationBuilder().token(TOKEN).build()
+
+    logger.info(f"Running your application")
 
     start_handler = CommandHandler('start', start)
     application.add_handler(start_handler)
@@ -109,6 +99,7 @@ def main():
     unknown_handler = MessageHandler(filters.COMMAND | filters.TEXT, unknown)
     application.add_handler(unknown_handler)
 
+    logger.success(f"Bot is running")
     application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 

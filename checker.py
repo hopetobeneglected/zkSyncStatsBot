@@ -1,5 +1,7 @@
 import datetime
 import multiprocessing
+
+from numpy import double
 from selenium import webdriver
 import selenium.common.exceptions
 from selenium.webdriver.common.by import By
@@ -25,16 +27,16 @@ CHROME_OPTIONS.add_experimental_option('excludeSwitches', ['enable-logging'])
 HEADERS = data.get('headers')
 PROXIES = data.get('proxies')
 
-# logger.add('/tmp/logs/checker.log', level='DEBUG', retention="1 day")
+logger.add('/logs/checker.log', level='DEBUG', retention="1 day")
 
 
 async def get_stats(wallet, max_retries=3):
     BROWSER = None
 
-    # logger.info(f"Statistic loading for {wallet}...")
+    logger.info(f"Statistic loading for {wallet}...")
     url_stats = f"https://byfishh.github.io/zk-flow/?address={wallet}"
-
     retries_left = max_retries
+
     for retry in range(max_retries):
         try:
             BROWSER = webdriver.Chrome(options=CHROME_OPTIONS)
@@ -52,28 +54,27 @@ async def get_stats(wallet, max_retries=3):
             volume = volume_element.text
             fee_spent = fee_spent_element.text
 
-            # logger.success(f"{wallet} has {amount_trx} transactions | {volume} volume | {fee_spent} fee spent")
-            BROWSER.quit()
+            logger.success(f"{wallet} has {amount_trx} transactions | {volume} volume | {fee_spent} fee spent")
             return f"\n\nWallet {wallet}\n" \
                    f"Account stats: {amount_trx} transactions | {volume} volume | {fee_spent} fee spent\n"
 
         except (selenium.common.exceptions.WebDriverException, selenium.common.NoSuchElementException) as e:
-            # logger.warning(f"Something went wrong, retrying wallet {wallet}... (Retries left: {retries_left}), {e}")
+            logger.warning(f"Something went wrong, retrying wallet {wallet}... (Retries left: {retries_left}), {e}")
             retries_left -= 1
 
     else:
-        # logger.error(f"Failed to retrieve stats for wallet {wallet}. Max retries exceeded.")
+        logger.error(f"Failed to retrieve stats for wallet {wallet}. Max retries exceeded.")
         BROWSER.quit()
         return "Failed to load the statistic. Please try again later"
 
 
-def get_wallets():
-    with open("wallets.txt", "r") as f:
-        return [row.strip() for row in f]
+# def get_wallets():
+#     with open("wallets.txt", "r") as f:
+#         return [row.strip() for row in f]
 
 
 async def get_balance(wallet, max_retries=3):
-    # logger.info(f"Balances loading for {wallet}...")
+    logger.info(f"Balances loading for {wallet}...")
 
     retries_left = max_retries
     for retry in range(max_retries):
@@ -90,19 +91,20 @@ async def get_balance(wallet, max_retries=3):
             response.raise_for_status()
 
             tokens_array = json.loads(response.text)["result"][:3]
-            token_info_strings = [f"{calculate_amount(token['balance'], token['decimals'])} {token['symbol']}" for token
+            token_info_strings = [f"{round(calculate_amount(token['balance'], token['decimals']), 4)} {token['symbol']}" for token
                                   in tokens_array]
 
-            # logger.success(f"Balance of {wallet} : " + " | ".join(token_info_strings))
-            return f"Account balances: " + "| ".join(token_info_strings)
+            usd_price = str(round(1850 * double(token_info_strings[0].rsplit(' ')[0]), 2))
+            logger.success(f"Balance of {wallet} : " + " | ".join(token_info_strings))
+            return f"Account balances: (${usd_price}) " + " | ".join(token_info_strings)
 
         except (requests.exceptions.RequestException, TypeError) as e:
             await asyncio.sleep(1)
-            # logger.warning(f"Something went wrong, retrying wallet {wallet}... (Retries left: {retries_left}), {e}")
+            logger.warning(f"Something went wrong, retrying wallet {wallet}... (Retries left: {retries_left}), {e}")
             retries_left -= 1
 
     else:
-        # logger.error(f"Failed to retrieve balances for wallet {wallet}. Max retries exceeded.")
+        logger.error(f"Failed to retrieve balances for wallet {wallet}. Max retries exceeded.")
         return "Failed to load balances. Please try again later"
 
 
@@ -120,6 +122,7 @@ def get_info(wallets):
     output = ""
 
     start_time = datetime.datetime.now()
+
     with multiprocessing.Pool() as pool:
         results = pool.map(run_pair, wallets)
 
@@ -129,9 +132,5 @@ def get_info(wallets):
 
     end_time = datetime.datetime.now()
     elapsed_time = end_time - start_time
-    print("Total time elapsed:", elapsed_time)
-    return output
-
-#
-# if __name__ == "__main__":
-#     get_info(get_wallets())
+    ret = [output, elapsed_time.seconds]
+    return ret
