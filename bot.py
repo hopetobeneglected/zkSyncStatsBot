@@ -61,7 +61,7 @@ async def proceed(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     logger.info(f"User {user.id} (username - {user.name}) wrote {wallet_addresses}")
 
     sec = len(wallet_addresses)
-
+    await update.message.reply_text("_Please wait... Estimated waiting time - 20 seconds_", parse_mode=ParseMode.MARKDOWN)
     result = checker.get_info(wallet_addresses)
     await update.message.reply_text(result[0])
     await update.message.reply_text(f"*{sec} wallet(s) were successfully proceeded!*\n\n"
